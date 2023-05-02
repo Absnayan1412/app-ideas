@@ -1,0 +1,123 @@
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.*;
+
+public class SnakeGame extends JFrame implements ActionListener {
+    private static final int ROWS = 20;
+    private static final int COLS = 20;
+    private static final int CELL_SIZE = 20;
+    private static final int GAME_WIDTH = ROWS * CELL_SIZE;
+    private static final int GAME_HEIGHT = COLS * CELL_SIZE;
+
+    private Timer timer;
+    private Snake snake;
+    private Apple apple;
+
+    public SnakeGame() {
+        setTitle("Snake Game");
+        setSize(GAME_WIDTH, GAME_HEIGHT);
+        setDefaultCloseOperation(EXIT_ON_CLOSE);
+        setLocationRelativeTo(null);
+        setResizable(false);
+
+        snake = new Snake();
+        apple = new Apple();
+        timer = new Timer(100, this);
+        timer.start();
+
+        addKeyListener(new KeyAdapter() {
+            public void keyPressed(KeyEvent e) {
+                int key = e.getKeyCode();
+                if (key == KeyEvent.VK_LEFT) {
+                    snake.setDirection(Snake.Direction.LEFT);
+                } else if (key == KeyEvent.VK_RIGHT) {
+                    snake.setDirection(Snake.Direction.RIGHT);
+                } else if (key == KeyEvent.VK_UP) {
+                    snake.setDirection(Snake.Direction.UP);
+                } else if (key == KeyEvent.VK_DOWN) {
+                    snake.setDirection(Snake.Direction.DOWN);
+                }
+            }
+        });
+
+        setVisible(true);
+    }
+
+    public void actionPerformed(ActionEvent e) {
+        if (snake.checkCollision()) {
+            timer.stop();
+            JOptionPane.showMessageDialog(this, "Game Over!");
+            System.exit(0);
+        }
+
+        if (snake.eat(apple)) {
+            apple.generate();
+        } else {
+            snake.move();
+        }
+
+        repaint();
+    }
+
+    public void paint(Graphics g) {
+        super.paint(g);
+        snake.paint(g);
+        apple.paint(g);
+    }
+
+    public static void main(String[] args) {
+        new SnakeGame();
+    }
+
+    private class Snake {
+        private LinkedList<Point> body;
+        private Direction direction;
+
+        public Snake() {
+            body = new LinkedList<Point>();
+            body.add(new Point(10, 10));
+            body.add(new Point(10, 11));
+            body.add(new Point(10, 12));
+            direction = Direction.RIGHT;
+        }
+
+        public void setDirection(Direction direction) {
+            if (this.direction == Direction.LEFT && direction == Direction.RIGHT ||
+                    this.direction == Direction.RIGHT && direction == Direction.LEFT ||
+                    this.direction == Direction.UP && direction == Direction.DOWN ||
+                    this.direction == Direction.DOWN && direction == Direction.UP) {
+                return;
+            }
+            this.direction = direction;
+        }
+
+        public boolean checkCollision() {
+            Point head = body.getFirst();
+            for (int i = 1; i < body.size(); i++) {
+                Point p = body.get(i);
+                if (head.x == p.x && head.y == p.y) {
+                    return true;
+                }
+            }
+            return head.x < 0 || head.x >= ROWS || head.y < 0 || head.y >= COLS;
+        }
+
+        public boolean eat(Apple apple) {
+            Point head = body.getFirst();
+            if (head.x == apple.getX() && head.y == apple.getY()) {
+                body.addFirst(apple.getLocation());
+                return true;
+            }
+            return false;
+        }
+
+        public void move() {
+            Point head = body.getFirst();
+            int x = head.x;
+            int y = head.y;
+            if (direction == Direction.LEFT) {
+                x--;
+            } else if (direction == Direction.RIGHT) {
+                x++;
+            } else if (direction == Direction.UP) {
+                y--;
